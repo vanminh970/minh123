@@ -1,0 +1,1551 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNTT 4.0 Assignment | Hoàng Văn Minh - PK05001</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Three.js cho Dải Ngân Hà 3D -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        cosmic: {
+                            950: '#040611',
+                            900: '#0b0f26',
+                            800: '#13193b',
+                        },
+                        fpt: {
+                            orange: '#f37021',
+                            blue: '#0066b3',
+                            green: '#0db14b'
+                        }
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-8px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        ::-webkit-scrollbar {
+            width: 7px;
+            height: 7px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(243, 112, 33, 0.35);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(243, 112, 33, 0.65);
+        }
+
+        .glass-panel {
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        /* Chuyển cảnh mượt giữa Galaxy Landing và Workspace */
+        #galaxy-landing {
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.8s;
+        }
+        #galaxy-landing.hidden-landing {
+            opacity: 0;
+            transform: scale(1.06);
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        #main-app {
+            transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+        #main-app.hidden-app {
+            opacity: 0;
+            transform: translateY(16px);
+            pointer-events: none;
+            display: none;
+        }
+
+        .glow-cta {
+            box-shadow: 0 0 28px rgba(243, 112, 33, 0.55), 0 0 55px rgba(99, 102, 241, 0.35);
+        }
+        .glow-cta:hover {
+            box-shadow: 0 0 38px rgba(243, 112, 33, 0.85), 0 0 75px rgba(139, 92, 246, 0.55);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-cosmic-950 dark:text-slate-100 font-sans antialiased selection:bg-orange-500 selection:text-white transition-colors duration-300 overflow-x-hidden">
+
+    <!-- =====================================================================
+         1. MÀN HÌNH MỞ ĐẦU VŨ TRỤ THIÊN HÀ (3D GALAXY HERO INTRO)
+    ====================================================================== -->
+    <section id="galaxy-landing" class="fixed inset-0 z-50 flex flex-col items-center justify-between bg-[#03050e] text-white overflow-hidden select-none p-5 sm:p-8">
+        <!-- Canvas Three.js render Dải Ngân Hà, Tinh vân & Hành tinh -->
+        <canvas id="galaxy-canvas" class="absolute inset-0 w-full h-full block cursor-grab active:cursor-grabbing"></canvas>
+
+        <!-- Lớp phủ gradient nhẹ tạo chiều sâu -->
+        <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/75 pointer-events-none"></div>
+
+        <!-- Thanh tiêu đề trên cùng của Galaxy -->
+        <div class="relative z-10 w-full max-w-6xl flex flex-wrap items-center justify-between gap-3 pointer-events-none">
+            <div class="flex items-center gap-2.5 bg-white/10 border border-white/15 backdrop-blur-md px-4 py-2 rounded-full">
+                <span class="w-2.5 h-2.5 rounded-full bg-orange-400 animate-ping"></span>
+                <span class="text-xs sm:text-sm font-bold tracking-wider uppercase text-orange-200">FPT Polytechnic • CNTT 4.0</span>
+            </div>
+            <div class="hidden sm:flex items-center gap-2 text-xs text-slate-300 bg-white/5 border border-white/10 backdrop-blur-md px-4 py-2 rounded-full">
+                <i data-lucide="orbit" class="w-4 h-4 text-cyan-400"></i>
+                <span>Kéo chuột hoặc vuốt để xoay góc nhìn Dải Ngân Hà 3D</span>
+            </div>
+        </div>
+
+        <!-- Khối trung tâm: Thông tin sinh viên Hoàng Văn Minh & Nút hành động -->
+        <div class="relative z-10 max-w-3xl mx-auto text-center pointer-events-none animate-float my-auto">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 mb-5 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-200 text-xs sm:text-sm font-medium backdrop-blur-md">
+                <i data-lucide="sparkles" class="w-4 h-4 text-amber-300"></i>
+                <span>Hệ thống Trợ lý Học tập & Ứng dụng Quản lý Ghi chú AI</span>
+            </div>
+
+            <h1 class="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight mb-4 leading-tight">
+                Vũ Trụ Tri Thức
+                <span class="block bg-gradient-to-r from-orange-400 via-amber-300 to-cyan-300 bg-clip-text text-transparent">
+                    CNTT 4.0 — Assignment
+                </span>
+            </h1>
+
+            <!-- Thẻ định danh sinh viên nổi bật -->
+            <div class="mx-auto max-w-xl mb-8 p-4 sm:p-5 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-xl shadow-2xl">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left sm:text-center divide-y sm:divide-y-0 sm:divide-x divide-white/15">
+                    <div class="pt-1 sm:pt-0">
+                        <div class="text-[11px] uppercase tracking-wider text-slate-300">Sinh viên thực hiện</div>
+                        <div class="text-base sm:text-lg font-bold text-white mt-0.5">Hoàng Văn Minh</div>
+                    </div>
+                    <div class="pt-2 sm:pt-0 sm:px-3">
+                        <div class="text-[11px] uppercase tracking-wider text-slate-300">Mã số sinh viên</div>
+                        <div class="text-base sm:text-lg font-mono font-bold text-orange-300 mt-0.5">PK05001</div>
+                    </div>
+                    <div class="pt-2 sm:pt-0 sm:px-3">
+                        <div class="text-[11px] uppercase tracking-wider text-slate-300">Học phần & Tỷ trọng</div>
+                        <div class="text-base sm:text-lg font-bold text-cyan-300 mt-0.5">CNTT 4.0 (60%)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nút vào không gian thực hành -->
+            <div class="pointer-events-auto flex flex-col sm:flex-row items-center justify-center gap-4">
+                <button onclick="enterWorkspace()" class="glow-cta group inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-indigo-600 hover:from-orange-400 hover:to-indigo-500 text-white font-bold text-base sm:text-lg transition-all duration-300 transform hover:-translate-y-1 active:scale-95">
+                    <span>Khám phá & Thực hành Assignment</span>
+                    <i data-lucide="rocket" class="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Thông tin tóm tắt các giai đoạn dưới đáy Galaxy -->
+        <div class="relative z-10 w-full max-w-4xl grid grid-cols-3 gap-2 sm:gap-6 bg-white/5 border border-white/10 backdrop-blur-md px-4 sm:px-8 py-3 rounded-2xl text-center pointer-events-none">
+            <div>
+                <div class="text-sm sm:text-base font-bold text-orange-300">Phần 1 (Y1 – Y3)</div>
+                <div class="text-[11px] sm:text-xs text-slate-300">Thư viện số & NotebookLM</div>
+            </div>
+            <div class="border-x border-white/10 px-2">
+                <div class="text-sm sm:text-base font-bold text-cyan-300">Phần 2 (Y4 – Y6)</div>
+                <div class="text-[11px] sm:text-xs text-slate-300">Wireframe & App Ghi chú AI</div>
+            </div>
+            <div>
+                <div class="text-sm sm:text-base font-bold text-emerald-300">Đóng gói & Bảo vệ</div>
+                <div class="text-[11px] sm:text-xs text-slate-300">10% GĐ1 + 10% GĐ2 + 40% BV</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- =====================================================================
+         2. KHÔNG GIAN LÀM VIỆC & THỰC HÀNH ASSIGNMENT CHÍNH
+    ====================================================================== -->
+    <div id="main-app" class="hidden-app min-h-screen flex flex-col">
+
+        <!-- Thanh điều hướng Top Header -->
+        <header class="sticky top-0 z-40 glass-panel bg-white/85 dark:bg-cosmic-900/85 border-b border-slate-200/80 dark:border-slate-800/80 transition-colors duration-300">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+                <!-- Trái: Nút menu mobile + Thông tin SV -->
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleMobileSidebar()" class="lg:hidden p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                        <i data-lucide="menu" class="w-5 h-5"></i>
+                    </button>
+                    <div class="flex items-center gap-2.5 cursor-pointer" onclick="switchTab('overview')">
+                        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-md">
+                            FPT
+                        </div>
+                        <div>
+                            <div class="font-bold text-sm sm:text-base leading-tight flex items-center gap-2">
+                                <span>Hoàng Văn Minh</span>
+                                <span class="px-2 py-0.5 rounded-md bg-orange-500/15 text-orange-600 dark:text-orange-300 font-mono text-xs font-bold">PK05001</span>
+                            </div>
+                            <div class="text-[11px] text-slate-500 dark:text-slate-400">Assignment CNTT 4.0 • FPT Polytechnic</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Giữa: Thanh tiến độ hoàn thành Y1 - Y6 -->
+                <div class="hidden md:flex items-center gap-3 flex-1 max-w-xs mx-4">
+                    <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">Tiến độ Y1–Y6:</span>
+                    <div class="w-full h-2.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div id="top-progress-bar" class="h-full bg-gradient-to-r from-orange-500 to-indigo-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    <span id="top-progress-text" class="text-xs font-bold text-orange-600 dark:text-orange-400 font-mono">0%</span>
+                </div>
+
+                <!-- Phải: Nút quay lại Galaxy & Nút Sáng/Tối -->
+                <div class="flex items-center gap-2">
+                    <button onclick="returnToGalaxy()" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-500/15 dark:text-indigo-300 dark:hover:bg-indigo-500/25 border border-indigo-200/70 dark:border-indigo-500/30 transition-all">
+                        <i data-lucide="sparkles" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Vũ trụ Galaxy</span>
+                    </button>
+
+                    <button onclick="toggleTheme()" aria-label="Chuyển giao diện Sáng / Tối" class="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-amber-300 border border-slate-200/80 dark:border-slate-700 transition-all">
+                        <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
+                        <i data-lucide="moon" class="w-5 h-5 block dark:hidden text-indigo-600"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Khung bố cục Sidebar + Nội dung chính -->
+        <div class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex gap-6 relative">
+
+            <!-- Backdrop Mobile -->
+            <div id="sidebar-backdrop" onclick="toggleMobileSidebar()" class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden backdrop-blur-sm"></div>
+
+            <!-- SIDEBAR ĐIỀU HƯỚNG 4 PHẦN CHÍNH -->
+            <aside id="app-sidebar" class="fixed lg:sticky top-16 lg:top-22 left-0 z-30 h-[calc(100vh-4rem)] lg:h-[calc(100vh-6.5rem)] w-72 shrink-0 -translate-x-full lg:translate-x-0 transition-transform duration-300 bg-white dark:bg-cosmic-900 lg:bg-transparent lg:dark:bg-transparent p-4 lg:p-0 border-r lg:border-none border-slate-200 dark:border-slate-800 overflow-y-auto">
+                <div class="glass-panel bg-white/90 dark:bg-cosmic-900/75 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm space-y-2">
+                    <div class="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                        Cấu trúc Assignment CNTT 4.0
+                    </div>
+
+                    <button onclick="switchTab('overview')" id="tab-overview" class="nav-item w-full flex items-start gap-3 p-3 rounded-xl text-left transition-all bg-gradient-to-r from-orange-500 to-amber-600 text-white shadow-md">
+                        <div class="p-2 rounded-lg bg-white/20 shrink-0 mt-0.5">
+                            <i data-lucide="compass" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-sm">Tổng quan & Mục tiêu</div>
+                            <div class="text-xs opacity-85 mt-0.5">Mục tiêu A, B, C, D & Checklist</div>
+                        </div>
+                    </button>
+
+                    <button onclick="switchTab('part1')" id="tab-part1" class="nav-item w-full flex items-start gap-3 p-3 rounded-xl text-left transition-all text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/70">
+                        <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5">
+                            <i data-lucide="book-open-check" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-sm">Phần 1: Trợ lý học tập</div>
+                            <div class="text-xs text-slate-400 mt-0.5">NotebookLM • Y1, Y2, Y3</div>
+                        </div>
+                    </button>
+
+                    <button onclick="switchTab('part2')" id="tab-part2" class="nav-item w-full flex items-start gap-3 p-3 rounded-xl text-left transition-all text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/70">
+                        <div class="p-2 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 shrink-0 mt-0.5">
+                            <i data-lucide="notebook-pen" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-sm">Phần 2: App Ghi chú AI</div>
+                            <div class="text-xs text-slate-400 mt-0.5">Wireframe & App • Y4, Y5, Y6</div>
+                        </div>
+                    </button>
+
+                    <button onclick="switchTab('grading')" id="tab-grading" class="nav-item w-full flex items-start gap-3 p-3 rounded-xl text-left transition-all text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/70">
+                        <div class="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5">
+                            <i data-lucide="award" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-sm">Nộp bài & Đánh giá</div>
+                            <div class="text-xs text-slate-400 mt-0.5">Đóng gói ZIP & Tiêu chí 60%</div>
+                        </div>
+                    </button>
+
+                    <!-- Thẻ thông tin hồ sơ sinh viên -->
+                    <div class="mt-4 pt-4 border-t border-slate-200/80 dark:border-slate-800">
+                        <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/70 space-y-2">
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-slate-400">Sinh viên:</span>
+                                <span class="font-bold">Hoàng Văn Minh</span>
+                            </div>
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-slate-400">MSSV:</span>
+                                <span class="font-mono font-bold text-orange-500">PK05001</span>
+                            </div>
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-slate-400">Điều phối:</span>
+                                <span class="font-medium">Thầy Lã Ngọc Quang</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- KHU VỰC NỘI DUNG CHI TIẾT -->
+            <main class="flex-1 min-w-0 space-y-6">
+
+                <!-- ===========================================================
+                     TAB 1: TỔNG QUAN & MỤC TIÊU MÔN HỌC (A, B, C, D)
+                ============================================================ -->
+                <section id="section-overview" class="tab-section space-y-6">
+                    <!-- Banner Tổng quan -->
+                    <div class="rounded-2xl p-6 sm:p-8 bg-gradient-to-r from-orange-500 via-amber-500 to-indigo-600 text-white shadow-lg relative overflow-hidden">
+                        <div class="relative z-10 max-w-2xl">
+                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-xs font-semibold mb-3">
+                                <span>PHỤ LỤC 2 • TRƯỜNG CAO ĐẲNG FPT POLYTECHNIC</span>
+                            </div>
+                            <h2 class="text-2xl sm:text-3xl font-extrabold mb-2">Assignment Môn Học: CNTT 4.0</h2>
+                            <p class="text-white/90 text-sm sm:text-base leading-relaxed">
+                                Bài Assignment chiếm <strong>60% tổng điểm môn học</strong>, đòi hỏi sinh viên <strong>Hoàng Văn Minh (PK05001)</strong> tự thực hiện nhằm làm chủ công cụ AI hỗ trợ học tập và tự tay xây dựng ứng dụng quản lý ghi chú cá nhân.
+                            </p>
+                        </div>
+                        <i data-lucide="cpu" class="w-40 h-40 absolute -right-6 -bottom-6 text-white/10 rotate-12"></i>
+                    </div>
+
+                    <!-- Thẻ thông số môn học -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="glass-panel bg-white/90 dark:bg-cosmic-900/75 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4">
+                            <div class="text-xs text-slate-400 font-medium">Sinh viên thực hiện</div>
+                            <div class="text-base sm:text-lg font-bold mt-1">Hoàng Văn Minh</div>
+                            <div class="text-xs font-mono text-orange-500 font-semibold mt-0.5">MSSV: PK05001</div>
+                        </div>
+                        <div class="glass-panel bg-white/90 dark:bg-cosmic-900/75 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4">
+                            <div class="text-xs text-slate-400 font-medium">Tỷ trọng điểm</div>
+                            <div class="text-base sm:text-lg font-bold text-indigo-600 dark:text-indigo-400 mt-1">60% Tổng điểm</div>
+                            <div class="text-xs text-slate-500 mt-0.5">10% GĐ1 + 10% GĐ2 + 40% BV</div>
+                        </div>
+                        <div class="glass-panel bg-white/90 dark:bg-cosmic-900/75 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4">
+                            <div class="text-xs text-slate-400 font-medium">Người điều phối</div>
+                            <div class="text-base sm:text-lg font-bold mt-1">Lã Ngọc Quang</div>
+                            <div class="text-xs text-slate-500 mt-0.5">FPT Polytechnic (2026)</div>
+                        </div>
+                        <div class="glass-panel bg-white/90 dark:bg-cosmic-900/75 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4">
+                            <div class="text-xs text-slate-400 font-medium">Công cụ cốt lõi</div>
+                            <div class="text-base sm:text-lg font-bold text-cyan-600 dark:text-cyan-400 mt-1">NotebookLM & AI Studio</div>
+                            <div class="text-xs text-slate-500 mt-0.5">Kèm DrawIO / Figma / Canva</div>
+                        </div>
+                    </div>
+
+                    <!-- 4 Mục tiêu môn học (A, B, C, D) dạng thẻ tương tác mở rộng -->
+                    <div class="glass-panel bg-white/90 dark:bg-cosmic-900/75 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-bold flex items-center gap-2">
+                                <i data-lucide="target" class="w-5 h-5 text-orange-500"></i>
+                                <span>4 Mục tiêu Môn học CNTT 4.0 (Nhấn vào từng thẻ để xem chi tiết)</span>
+                            </h3>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="objectives-grid">
+                            <!-- Render qua JS -->
+                        </div>
+                    </div>
+
+                    <!-- Checklist Tiến độ Yêu cầu Y1 - Y6 -->
+                    <div class="glass-panel bg-white/90 dark:bg-cosmic-900/75 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                            <div>
+                                <h3 class="text-lg font-bold flex items-center gap-2">
+                                    <i data-lucide="check-square" class="w-5 h-5 text-emerald-500"></i>
+                                    <span>Bảng theo dõi Tiến độ Yêu cầu Assignment (Y1 – Y6)</span>
+                                </h3>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                    Đánh dấu các yêu cầu đã thực hiện hoặc tự động cập nhật khi bạn thao tác ở Phần 1 và Phần 2.
+                                </p>
+                            </div>
+                            <span id="overview-badge-count" class="px-3 py-1 rounded-full text-xs font-bold bg-orange-500/15 text-orange-600 dark:text-orange-300">0 / 6 Yêu cầu</span>
+                        </div>
+
+                        <div id="checklist-y1-y6" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <!-- Render qua JS -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ===========================================================
+                     TAB 2: PHẦN 1 - TỰ TẠO TRỢ LÝ HỌC TẬP (GOOGLE NOTEBOOKLM)
+                ============================================================ -->
+                <section id="section-part1" class="tab-section hidden space-y-6">
+                    <!-- Banner Phần 1 -->
+                    <div class="rounded-2xl p-6 sm:p-8 bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-700 text-white shadow-lg relative overflow-hidden">
+                        <div class="relative z-10">
+                            <span class="inline-block px-3 py-1 rounded-full bg-white/20 text-xs font-semibold mb-3">PHẦN 1 • CÔNG CỤ: GOOGLE NOTEBOOKLM</span>
+                            <h2 class="text-2xl sm:text-3xl font-extrabold mb-2">Tự tạo “Trợ lý học tập” & Thư viện số</h2>
+                            <p class="text-indigo-100 text-sm sm:text-base max-w-2xl">
+                                Rèn luyện kỹ năng tìm kiếm, khai thác thông tin và tự xây dựng “Thư viện số cá nhân” phục vụ môn học CNTT 4.0 (Y1, Y2) và mở rộng sang các môn khác (Y3).
+                            </p>
+                        </div>
+                        <i data-lucide="library" class="w-40 h-40 absolute -right-6 -bottom-6 text-white/10 -rotate-12"></i>
+                    </div>
+
+                    <!-- Trình quản lý Thư viện số cá nhân (Y1, Y2, Y3) -->
+                    <div class="glass-panel bg-white/90 dark:bg-cosmic-900/75 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+                        <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+                            <div>
+                                <h3 class="text-lg font-bold flex items-center gap-2">
+                                    <i data-lucide="folder-kanban" class="w-5 h-5 text-indigo-500"></i>
+                                    <span>Thư viện Số Cá nhân — Hoàng Văn Minh (PK05001)</span>
+                                </h3>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                    Quản lý đầy đủ 8 slide bài học (Y1), 4 định dạng tài nguyên (Y2a–d) và thư viện môn học mở rộng (Y3).
+                                </p>
+                            </div>
+
+                            <!-- Bộ chọn Môn học (Y1 vs Y3 mở rộng) -->
+                            <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+                                <button onclick="switchLibrarySubject('CNTT4.0')" id="lib-subj-cntt" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white transition-all">
+                                    Môn CNTT 4.0 (Y1–Y2)
+                                </button>
+                                <button onclick="switchLibrarySubject('COM108')" id="lib-subj-com" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-700 transition-all">
+                                    Mở rộng: COM108 (Y3)
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Bộ lọc 4 nhóm nội dung theo Y2 -->
+                        <div class="flex flex-wrap items-center gap-2 mb-5">
+                            <button onclick="filterLibraryType('all')" class="lib-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 border border-indigo-500/30" data-type="all">
+                                Tất cả nguồn
+                            </button>
+                            <button onclick="filterLibraryType('file')" class="lib-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300" data-type="file">
+                                Y2a. Tập tin / 8 Slide
+                            </button>
+                            <button onclick="filterLibraryType('media')" class="lib-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300" data-type="media">
+                                Y2b. Hình ảnh / Video
+                            </button>
+                            <button onclick="filterLibraryType('link')" class="lib-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300" data-type="link">
+                                Y2c. Link tham chiếu Web
+                            </button>
+                            <button onclick="filterLibraryType('note')" class="lib-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300" data-type="note">
+                                Y2d. Ghi chú bản thân
+                            </button>
+                        </div>
+
+                        <!-- Form thêm mới tài nguyên vào Thư viện số -->
+                        <form onsubmit="addLibraryItem(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 mb-5">
+                            <select id="lib-new-type" class="sm:col-span-3 px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="file">Y2a: Tập tin (PDF/Word/Slide)</option>
+                                <option value="media">Y2b: Hình ảnh / Video</option>
+                                <option value="link">Y2c: Link Website tham chiếu</option>
+                                <option value="note">Y2d: Ghi chú cá nhân</option>
+                            </select>
+                            <input id="lib-new-title" type="text" required placeholder="Tên tài liệu / Tiêu đề nguồn..." class="sm:col-span-4 px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <input id="lib-new-detail" type="text" required placeholder="Đường dẫn URL, tên file hoặc nội dung ghi chú..." class="sm:col-span-3 px-3 py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <button type="submit" class="sm:col-span-2 px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors">
+                                <i data-lucide="plus" class="w-4 h-4"></i>
+                                <span>Thêm nguồn</span>
+                            </button>
+                        </form>
+
+                        <!-- Danh sách tài nguyên trong Thư viện số -->
+                        <div id="library-items-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                            <!-- Render qua JS -->
+                        </div>
+                    </div>
+
+                    <!-- Khung mô phỏng Trợ lý Hỏi đáp Google NotebookLM -->
+                    <div class="glass-panel bg-white/90 dark:bg-cosmic-900/75 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center">
+                                    <i data-lucide="bot" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-base sm:text-lg font-bold">Trợ lý Hỏi Đáp Google NotebookLM (Mô phỏng từ 8 Slide)</h3>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400">Đặt câu hỏi để khai thác tri thức tổng hợp từ Thư viện số cá nhân của Hoàng Văn Minh</p>
+                                </div>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-full text-[11px] font-mono bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 font-semibold">Đã nạp 8 Slide nguồn</span>
+                        </div>
+
+                        <!-- Gợi ý câu hỏi nhanh -->
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <button onclick="askNotebookLM('Tóm tắt xu hướng công nghệ cốt lõi trong cuộc cách mạng CNTT 4.0?')" class="text-xs px-3 py-1.5 rounded-full bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 transition-colors">
+                                ✨ Xu hướng cốt lõi CNTT 4.0?
+                            </button>
+                            <button onclick="askNotebookLM('Cách ứng dụng Google NotebookLM và AI Studio vào học tập hiệu quả?')" class="text-xs px-3 py-1.5 rounded-full bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 transition-colors">
+                                ✨ Ứng dụng NotebookLM & AI Studio?
+                            </button>
+                            <button onclick="askNotebookLM('Các nhóm nghề nghiệp triển vọng trong lĩnh vực CNTT hiện nay là gì?')" class="text-xs px-3 py-1.5 rounded-full bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 transition-colors">
+                                ✨ Nghề nghiệp trong lĩnh vực CNTT?
+                            </button>
+                        </div>
+
+                        <!-- Khung hội thoại -->
+                        <div id="notebook-chat-box" class="h-64 overflow-y-auto p-4 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 space-y-3 mb-3">
+                            <div class="flex items-start gap-2.5">
+                                <div class="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0 text-xs font-bold">AI</div>
+                                <div class="p-3 rounded-2xl rounded-tl-none bg-white dark:bg-slate-800 border border-slate-200/70 dark:border-slate-700 text-xs sm:text-sm leading-relaxed">
+                                    Xin chào <strong>Hoàng Văn Minh (PK05001)</strong>! Tôi là Trợ lý học tập NotebookLM của bạn. Tôi đã lập chỉ mục toàn bộ <strong>8 slide bài học CNTT 4.0</strong> cùng các ghi chú cá nhân của bạn. Hãy chọn câu hỏi gợi ý hoặc nhập câu hỏi bên dưới nhé!
+                                </div>
+                            </div>
+                        </div>
+
+                        <form onsubmit="handleNotebookSubmit(event)" class="flex gap-2">
+                            <input id="notebook-input" type="text" placeholder="Nhập câu hỏi dựa trên tài liệu đã thu thập..." class="flex-1 px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <button type="submit" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs sm:text-sm flex items-center gap-1.5 transition-colors">
+                                <span>Hỏi AI</span>
+                                <i data-lucide="send" class="w-4 h-4"></i>
+                            </button>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- ===========================================================
+                     TAB 3: PHẦN 2 - XÂY DỰNG ỨNG DỤNG QUẢN LÝ GHI CHÚ CÁ NHÂN (Y4, Y5, Y6)
+                ============================================================ -->
+                <section id="section-part2" class="tab-section hidden space-y-6">
+                    <!-- Banner Phần 2 -->
+                    <div class="rounded-2xl p-6 sm:p-8 bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-700 text-white shadow-lg relative overflow-hidden">
+                        <div class="relative z-10">
+                            <span class="inline-block px-3 py-1 rounded-full bg-white/20 text-xs font-semibold mb-3">PHẦN 2 • GOOGLE AI STUDIO & WIREFRAME</span>
+                            <h2 class="text-2xl sm:text-3xl font-extrabold mb-2">Ứng dụng “Quản lý Ghi chú Cá nhân”</h2>
+                            <p class="text-cyan-50 text-sm sm:text-base max-w-2xl">
+                                Thiết kế bản vẽ phác thảo giao diện & luồng vận hành (Y4), vận hành thực tế ít nhất 10 ghi chú trong tối thiểu 5 ngày (Y5) và tích hợp trí tuệ nhân tạo AI hỗ trợ (Y6).
+                            </p>
+                        </div>
+                        <i data-lucide="sparkles" class="w-40 h-40 absolute -right-6 -bottom-6 text-white/10 rotate-12"></i>
+                    </div>
+
+                    <!-- Thanh chuyển Tab con trong Phần 2: Wireframe (Y4) vs Ứng dụng Ghi chú AI (Y5 & Y6) -->
+                    <div class="flex flex-wrap gap-2 p-1.5 rounded-2xl bg-slate-200/70 dark:bg-slate-800/80 w-fit">
+                        <button onclick="switchPart2Subtab('app')" id="subtab-btn-app" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white dark:bg-cosmic-900 text-cyan-600 dark:text-cyan-300 shadow-sm transition-all flex items-center gap-2">
+                            <i data-lucide="notebook-pen" class="w-4 h-4"></i>
+                            <span>Ứng dụng Ghi chú & AI (Y5 – Y6)</span>
+                        </button>
+                        <button onclick="switchPart2Subtab('wireframe')" id="subtab-btn-wireframe" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all flex items-center gap-2">
+                            <i data-lucide="layout-template" class="w-4 h-4"></i>
+                            <span>Bản vẽ Phác thảo & Luồng vận hành (Y4)</span>
+                        </button>
+                    </div>
+
+                    <!-- SUBTAB 2A: ỨNG DỤNG QUẢN LÝ GHI CHÚ CÁ NHÂN THỰC TẾ + AI (Y5 & Y6) -->
+                    <div id="part2-sub-app" class="space-y-6">
+                        <!-- Thanh trạng thái kiểm định Y5 (Số ghi chú >= 10 & Số ngày áp dụng >= 5) -->
+                        <div class="glass-panel bg-white/90 dark:bg-cosmic-900/75 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
+                            <div class="flex flex-wrap items-center justify-between gap-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-11 h-11 rounded-2xl bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 flex items-center justify-center shrink-0">
+                                        <i data-lucide="shield-check" class="w-6 h-6"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold text-sm sm:text-base">Kiểm định Điều kiện Yêu cầu Y5 (Hoàng Văn Minh - PK05001)</h3>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400">Yêu cầu tối thiểu: 10 ghi chú cá nhân có ý nghĩa & thời gian áp dụng ít nhất 5 ngày.</p>
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-wrap items-center gap-3">
+                                    <div class="px-3.5 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs">
+                                        <span class="text-slate-500 dark:text-slate-400">Y5a. Tổng ghi chú: </span>
+                                        <strong id="y5-note-count" class="text-emerald-600 dark:text-emerald-300 font-mono text-sm">10 / 10 ✓</strong>
+                                    </div>
+                                    <div class="px-3.5 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs">
+                                        <span class="text-slate-500 dark:text-slate-400">Y5b. Số ngày áp dụng: </span>
+                                        <strong id="y5-day-count" class="text-emerald-600 dark:text-emerald-300 font-mono text-sm">6 / 5 ngày ✓</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Khu vực AI Assistant Y6 (Tóm tắt thông minh, Gợi ý tag, Lập kế hoạch) -->
+                        <div class="glass-panel bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-cyan-500/10 border border-indigo-500/25 rounded-2xl p-5">
+                            <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2.5 py-0.5 rounded-md bg-indigo-600 text-white text-[11px] font-bold">Y6 • AI STUDIO</span>
+                                    <h4 class="font-bold text-sm sm:text-base">Trợ lý Trí tuệ Nhân tạo Quản lý Ghi chú</h4>
+                                </div>
+                                <div class="flex flex-wrap gap-2">
+                                    <button onclick="runAINoteAction('summary')" class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                                        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                                        <span>AI Tóm tắt toàn bộ ghi chú</span>
+                                    </button>
+                                    <button onclick="runAINoteAction('plan')" class="px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                                        <i data-lucide="calendar-check" class="w-3.5 h-3.5"></i>
+                                        <span>AI Đề xuất lộ trình ôn tập</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="ai-note-output" class="p-3.5 rounded-xl bg-white/80 dark:bg-cosmic-900/80 border border-slate-200/70 dark:border-slate-700/70 text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-relaxed">
+                                Nhấn vào một trong hai nút chức năng AI phía trên để phân tích dữ liệu từ danh sách ghi chú cá nhân của bạn.
+                            </div>
+                        </div>
+
+                        <!-- Bố cục 2 cột: Form Tạo/Sửa Ghi chú & Danh sách 10+ Ghi chú cá nhân -->
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                            <!-- Cột trái (4 cột): Tạo ghi chú mới -->
+                            <div class="lg:col-span-4 glass-panel bg-white/90 dark:bg-cosmic-900/75 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 h-fit space-y-4">
+                                <h4 class="font-bold text-base flex items-center gap-2">
+                                    <i data-lucide="plus-circle" class="w-5 h-5 text-cyan-500"></i>
+                                    <span>Thêm Ghi chú Mới</span>
+                                </h4>
+
+                                <form onsubmit="addPersonalNote(event)" class="space-y-3">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-500 mb-1">Tiêu đề ghi chú</label>
+                                        <input id="note-title" type="text" required placeholder="VD: Ghi chú buổi 6 - Wireframe Figma" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="block text-xs font-semibold text-slate-500 mb-1">Ngày ghi chú</label>
+                                            <input id="note-date" type="date" required value="2026-11-25" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-semibold text-slate-500 mb-1">Chủ đề / Tag</label>
+                                            <select id="note-tag" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                                                <option value="Học tập CNTT">Học tập CNTT</option>
+                                                <option value="NotebookLM">NotebookLM</option>
+                                                <option value="AI Studio">AI Studio</option>
+                                                <option value="Kế hoạch">Kế hoạch</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center justify-between mb-1">
+                                            <label class="text-xs font-semibold text-slate-500">Nội dung chi tiết</label>
+                                            <button type="button" onclick="aiAutoSuggestTag()" class="text-[11px] text-indigo-500 hover:underline font-semibold">✨ AI tự chọn Tag</button>
+                                        </div>
+                                        <textarea id="note-content" rows="4" required placeholder="Nhập nội dung bài học, ý tưởng hoặc nhiệm vụ cần ghi nhớ..." class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"></textarea>
+                                    </div>
+                                    <button type="submit" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs sm:text-sm shadow-md transition-all">
+                                        Lưu vào Ứng dụng Ghi chú
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- Cột phải (8 cột): Tìm kiếm, Lọc & Danh sách Ghi chú -->
+                            <div class="lg:col-span-8 glass-panel bg-white/90 dark:bg-cosmic-900/75 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 space-y-4">
+                                <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+                                    <div class="relative flex-1">
+                                        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                                        <input id="note-search" oninput="renderPersonalNotes()" type="text" placeholder="Tìm kiếm trong các ghi chú của Hoàng Văn Minh..." class="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                                    </div>
+                                    <select id="note-filter-tag" onchange="renderPersonalNotes()" class="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs font-semibold focus:outline-none">
+                                        <option value="all">Tất cả chủ đề</option>
+                                        <option value="Học tập CNTT">Học tập CNTT</option>
+                                        <option value="NotebookLM">NotebookLM</option>
+                                        <option value="AI Studio">AI Studio</option>
+                                        <option value="Kế hoạch">Kế hoạch</option>
+                                    </select>
+                                </div>
+
+                                <!-- Danh sách thẻ ghi chú -->
+                                <div id="personal-notes-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 max-h-[540px] overflow-y-auto pr-1">
+                                    <!-- Render qua JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUBTAB 2B: BẢN VẼ PHÁC THẢO & LUỒNG VẬN HÀNH (Y4) -->
+                    <div id="part2-sub-wireframe" class="hidden space-y-6">
+                        <div class="glass-panel bg-white/90 dark:bg-cosmic-900/75 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+                            <div class="flex flex-wrap items-center justify-between gap-2 mb-5">
+                                <div>
+                                    <h3 class="text-lg font-bold">Bản vẽ Phác thảo Wireframe & Cách Vận Hành (Yêu cầu Y4)</h3>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                        Thiết kế bằng DrawIO / Figma mô tả đầy đủ 3 phần: (a) Giao diện chính, (b) Giao diện chức năng chính, (c) Cách vận hành.
+                                    </p>
+                                </div>
+                                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/15 text-cyan-600 dark:text-cyan-300">Tương tác sơ đồ</span>
+                            </div>
+
+                            <!-- 3 Khối mô tả Y4a, Y4b, Y4c -->
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+                                <!-- Y4a -->
+                                <div onclick="selectWireframeNode('main-ui')" class="cursor-pointer p-4 rounded-2xl border-2 border-cyan-500/40 bg-cyan-500/5 hover:border-cyan-500 transition-all">
+                                    <div class="text-xs font-bold uppercase text-cyan-600 dark:text-cyan-400 mb-1">Y4a. Giao diện chính (Dashboard)</div>
+                                    <h4 class="font-bold text-sm mb-2">Bố cục 3 vùng trực quan</h4>
+                                    <div class="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono text-[11px] space-y-1.5">
+                                        <div class="p-1.5 rounded bg-slate-100 dark:bg-slate-800 text-center font-bold">[Header: Tìm kiếm + Lọc Tag + DarkMode]</div>
+                                        <div class="grid grid-cols-3 gap-1.5">
+                                            <div class="col-span-1 p-2 rounded bg-indigo-500/15 text-center">Sidebar<br>Thư mục</div>
+                                            <div class="col-span-2 p-2 rounded bg-cyan-500/15 text-center">Lưới thẻ Ghi chú<br>(Grid Cards)</div>
+                                        </div>
+                                        <div class="p-1 rounded bg-emerald-500/15 text-center">[Thanh Trợ lý AI Studio Y6]</div>
+                                    </div>
+                                </div>
+
+                                <!-- Y4b -->
+                                <div onclick="selectWireframeNode('func-ui')" class="cursor-pointer p-4 rounded-2xl border-2 border-indigo-500/40 bg-indigo-500/5 hover:border-indigo-500 transition-all">
+                                    <div class="text-xs font-bold uppercase text-indigo-600 dark:text-indigo-400 mb-1">Y4b. Giao diện chức năng chính</div>
+                                    <h4 class="font-bold text-sm mb-2">Form CRUD & Khung AI Prompt</h4>
+                                    <div class="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 font-mono text-[11px] space-y-1.5">
+                                        <div class="p-1.5 rounded bg-slate-100 dark:bg-slate-800">[Input Tiêu đề] + [Date Picker]</div>
+                                        <div class="p-2 rounded bg-slate-100 dark:bg-slate-800">[Textarea Nội dung ghi chú]</div>
+                                        <div class="grid grid-cols-2 gap-1.5">
+                                            <div class="p-1.5 rounded bg-indigo-500/20 text-center">[Nút AI Tóm tắt]</div>
+                                            <div class="p-1.5 rounded bg-emerald-500/20 text-center">[Nút Lưu Ghi chú]</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Y4c -->
+                                <div onclick="selectWireframeNode('workflow')" class="cursor-pointer p-4 rounded-2xl border-2 border-emerald-500/40 bg-emerald-500/5 hover:border-emerald-500 transition-all">
+                                    <div class="text-xs font-bold uppercase text-emerald-600 dark:text-emerald-400 mb-1">Y4c. Cách vận hành chức năng</div>
+                                    <h4 class="font-bold text-sm mb-2">Luồng xử lý dữ liệu khép kín</h4>
+                                    <div class="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs space-y-1.5 leading-relaxed">
+                                        <div><strong>1. Nhập liệu:</strong> SV nhập tiêu đề, ngày, nội dung.</div>
+                                        <div><strong>2. Xử lý AI:</strong> AI phân tích từ khóa, gắn nhãn & tóm tắt.</div>
+                                        <div><strong>3. Lưu trữ & Lọc:</strong> Cập nhật bộ đếm Y5 & hiển thị tức thì.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Chi tiết giải thích khi click vào từng khối Wireframe -->
+                            <div id="wireframe-detail-box" class="p-4 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm leading-relaxed">
+                                <strong>Gợi ý thuyết trình Y4:</strong> Bản vẽ phác thảo trên sử dụng nguyên tắc thiết kế tối giản (Minimalism), tách biệt rõ khu vực nhập liệu, khu vực hiển thị danh sách ghi chú theo ngày và khu vực gọi API AI Studio để sinh viên dễ thao tác hàng ngày.
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ===========================================================
+                     TAB 4: ĐÓNG GÓI SẢN PHẨM, ĐÁNH GIÁ & BẢO VỆ ASSIGNMENT
+                ============================================================ -->
+                <section id="section-grading" class="tab-section hidden space-y-6">
+                    <!-- Banner Đánh giá -->
+                    <div class="rounded-2xl p-6 sm:p-8 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-700 text-white shadow-lg relative overflow-hidden">
+                        <div class="relative z-10">
+                            <span class="inline-block px-3 py-1 rounded-full bg-white/20 text-xs font-semibold mb-3">QUY ĐỊNH NỘP BÀI & HỘI ĐỒNG BẢO VỆ</span>
+                            <h2 class="text-2xl sm:text-3xl font-extrabold mb-2">Đóng gói Sản phẩm & Tiêu chí Đánh giá</h2>
+                            <p class="text-emerald-50 text-sm sm:text-base max-w-2xl">
+                                Kiểm tra đúng quy tắc đặt tên tệp nén ZIP cho sinh viên <strong>Hoàng Văn Minh (PK05001)</strong>, cơ cấu điểm 60% và luyện tập câu hỏi vấn đáp trước hội đồng.
+                            </p>
+                        </div>
+                        <i data-lucide="package-check" class="w-40 h-40 absolute -right-6 -bottom-6 text-white/10 rotate-12"></i>
+                    </div>
+
+                    <!-- Công cụ kiểm tra & sao chép tên file ZIP chuẩn -->
+                    <div class="glass-panel bg-white/90 dark:bg-cosmic-900/75 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+                        <h3 class="text-lg font-bold mb-2 flex items-center gap-2">
+                            <i data-lucide="file-archive" class="w-5 h-5 text-orange-500"></i>
+                            <span>Quy tắc Đóng gói File Nộp bài Chuẩn FPT Polytechnic</span>
+                        </h3>
+                        <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mb-4">
+                            Định dạng quy định: <code class="font-mono text-orange-500">&lt;Mã sinh viên - Tên sinh viên&gt;_Mã Môn_Assignment.zip</code>
+                        </p>
+
+                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-4 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700">
+                            <div class="flex-1 font-mono text-sm sm:text-base font-bold text-emerald-600 dark:text-emerald-400 break-all" id="zip-filename-text">
+                                PK05001-HoangVanMinh_CNTT4.0_Assignment.zip
+                            </div>
+                            <button onclick="copyZipFilename()" class="px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-400 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shrink-0 transition-all">
+                                <i data-lucide="copy" class="w-4 h-4"></i>
+                                <span>Sao chép tên file ZIP</span>
+                            </button>
+                        </div>
+
+                        <!-- Danh mục hồ sơ bên trong file ZIP -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+                            <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700">
+                                <div class="text-xs font-bold uppercase text-emerald-600 dark:text-emerald-400 mb-2">Hạng mục Bắt buộc</div>
+                                <ul class="text-xs sm:text-sm space-y-2 text-slate-600 dark:text-slate-300">
+                                    <li class="flex items-start gap-2">
+                                        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5"></i>
+                                        <span><strong>Báo cáo quá trình thực hiện</strong> đầy đủ các yêu cầu Y1 – Y6.</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5"></i>
+                                        <span>Định dạng báo cáo: <strong>PDF</strong>, <strong>Microsoft Word (.docx)</strong> hoặc <strong>Google Docs</strong>.</span>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700">
+                                <div class="text-xs font-bold uppercase text-indigo-600 dark:text-indigo-400 mb-2">Tùy chọn Bổ sung (Khuyến khích)</div>
+                                <ul class="text-xs sm:text-sm space-y-2 text-slate-600 dark:text-slate-300">
+                                    <li class="flex items-start gap-2">
+                                        <i data-lucide="presentation" class="w-4 h-4 text-indigo-500 shrink-0 mt-0.5"></i>
+                                        <span><strong>Slide trình bày</strong> tóm tắt quá trình và kết quả thực hiện.</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <i data-lucide="mic" class="w-4 h-4 text-indigo-500 shrink-0 mt-0.5"></i>
+                                        <span><strong>Thuyết trình & Demo trực tiếp</strong> sản phẩm trước lớp và giảng viên.</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cơ cấu Điểm 60% & 4 Tiêu chí Đánh giá Thực hành -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Cơ cấu điểm -->
+                        <div class="glass-panel bg-white/90 dark:bg-cosmic-900/75 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+                            <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                                <i data-lucide="pie-chart" class="w-5 h-5 text-indigo-500"></i>
+                                <span>Cơ cấu Điểm Assignment (Tổng 60%)</span>
+                            </h3>
+
+                            <div class="space-y-4">
+                                <div>
+                                    <div class="flex justify-between text-xs sm:text-sm font-semibold mb-1">
+                                        <span>Đánh giá Giai đoạn 1 (Phần 1: NotebookLM)</span>
+                                        <span class="text-indigo-500 font-bold">10%</span>
+                                    </div>
+                                    <div class="w-full h-3 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                                        <div class="h-full bg-indigo-500 rounded-full" style="width: 16.6%"></div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div class="flex justify-between text-xs sm:text-sm font-semibold mb-1">
+                                        <span>Đánh giá Giai đoạn 2 (Phần 2: App Ghi chú AI)</span>
+                                        <span class="text-cyan-500 font-bold">10%</span>
+                                    </div>
+                                    <div class="w-full h-3 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                                        <div class="h-full bg-cyan-500 rounded-full" style="width: 16.6%"></div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div class="flex justify-between text-xs sm:text-sm font-semibold mb-1">
+                                        <span>Bảo vệ Assignment (Thực hành + Vấn đáp)</span>
+                                        <span class="text-orange-500 font-bold">40%</span>
+                                    </div>
+                                    <div class="w-full h-3 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                                        <div class="h-full bg-gradient-to-r from-orange-500 to-amber-500 rounded-full" style="width: 66.8%"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-5 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                                <strong>Lưu ý quan trọng:</strong> Điểm bảo vệ chiếm tỷ trọng lớn nhất (40%). Sinh viên cần trực tiếp thao tác các chức năng theo yêu cầu của giảng viên và trả lời câu hỏi vấn đáp tại buổi bảo vệ.
+                            </div>
+                        </div>
+
+                        <!-- 4 Tiêu chí chấm phần thực hành -->
+                        <div class="glass-panel bg-white/90 dark:bg-cosmic-900/75 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+                            <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                                <i data-lucide="list-checks" class="w-5 h-5 text-emerald-500"></i>
+                                <span>4 Tiêu chí Đánh giá Thực hành</span>
+                            </h3>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700">
+                                    <div class="font-bold text-sm text-emerald-600 dark:text-emerald-400 mb-1">1. Nội dung</div>
+                                    <p class="text-xs text-slate-600 dark:text-slate-300">Đầy đủ toàn bộ nội dung theo yêu cầu Y1 – Y6 của đề bài.</p>
+                                </div>
+                                <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700">
+                                    <div class="font-bold text-sm text-cyan-600 dark:text-cyan-400 mb-1">2. Thời gian</div>
+                                    <p class="text-xs text-slate-600 dark:text-slate-300">Nộp bài đúng hạn và trình bày không vượt quá thời gian cho phép.</p>
+                                </div>
+                                <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700">
+                                    <div class="font-bold text-sm text-indigo-600 dark:text-indigo-400 mb-1">3. Kỹ năng trình bày</div>
+                                    <p class="text-xs text-slate-600 dark:text-slate-300">Thuyết trình rõ ràng, dễ hiểu, mạch lạc, tự tin trả lời vấn đáp.</p>
+                                </div>
+                                <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700">
+                                    <div class="font-bold text-sm text-orange-600 dark:text-orange-400 mb-1">4. Sản phẩm</div>
+                                    <p class="text-xs text-slate-600 dark:text-slate-300">Giao diện đẹp, sinh động, sáng tạo và vận hành thực tế hiệu quả.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bộ câu hỏi luyện tập Vấn đáp Bảo vệ Assignment -->
+                    <div class="glass-panel bg-white/90 dark:bg-cosmic-900/75 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+                        <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                            <i data-lucide="message-square-question" class="w-5 h-5 text-violet-500"></i>
+                            <span>Luyện tập Câu hỏi Vấn đáp Bảo vệ (Nhấn để xem gợi ý trả lời)</span>
+                        </h3>
+                        <div id="defense-qa-list" class="space-y-3">
+                            <!-- Render qua JS -->
+                        </div>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Thông báo Toast (Thay thế hoàn toàn alert) -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- =====================================================================
+         JAVASCRIPT XỬ LÝ GALAXY 3D, CHUYỂN TAB, NOTEBOOKLM & APP GHI CHÚ AI
+    ====================================================================== -->
+    <script>
+        lucide.createIcons();
+
+        /* -------------------------------------------------------------------
+           1. THÔNG BÁO TOAST & CHẾ ĐỘ SÁNG/TỐI
+        ------------------------------------------------------------------- */
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bgClass = type === 'success'
+                ? 'bg-emerald-600 text-white border-emerald-400/40'
+                : type === 'info'
+                ? 'bg-indigo-600 text-white border-indigo-400/40'
+                : 'bg-orange-600 text-white border-orange-400/40';
+
+            toast.className = `pointer-events-auto flex items-center gap-2 px-4 py-3 rounded-xl border shadow-xl text-xs sm:text-sm font-semibold transform transition-all duration-300 translate-y-4 opacity-0 ${bgClass}`;
+            toast.innerHTML = `<span>${message}</span>`;
+            container.appendChild(toast);
+
+            requestAnimationFrame(() => toast.classList.remove('translate-y-4', 'opacity-0'));
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            html.classList.toggle('dark');
+            const isDark = html.classList.contains('dark');
+            localStorage.setItem('cntt4-theme', isDark ? 'dark' : 'light');
+            showToast(isDark ? 'Đã chuyển sang Giao diện Tối (Dark Mode)' : 'Đã chuyển sang Giao diện Sáng (Light Mode)', 'info');
+        }
+
+        /* -------------------------------------------------------------------
+           2. HIỆU ỨNG VŨ TRỤ THIÊN HÀ 3D (THREE.JS GALAXY + HÀNH TINH)
+        ------------------------------------------------------------------- */
+        let scene, camera, renderer, galaxyPoints, nebulaPoints, planetMesh, ringMesh;
+        let isGalaxyRunning = true;
+        let isDragging = false;
+        let prevMouse = { x: 0, y: 0 };
+        let targetRot = { x: 0.42, y: 0 };
+
+        function initGalaxyScene() {
+            const canvas = document.getElementById('galaxy-canvas');
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x03050e, 0.032);
+
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 4.6, 10);
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            // 1. Dải Ngân Hà xoắn ốc 15.000 hạt sao
+            const count = 15000;
+            const radius = 9.0;
+            const branches = 5;
+            const spin = 1.4;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(count * 3);
+            const colors = new Float32Array(count * 3);
+
+            const colorCore = new THREE.Color('#ff8c42');
+            const colorMid = new THREE.Color('#a855f7');
+            const colorEdge = new THREE.Color('#38bdf8');
+
+            for (let i = 0; i < count; i++) {
+                const i3 = i * 3;
+                const r = Math.random() * radius;
+                const spinAngle = r * spin;
+                const branchAngle = ((i % branches) / branches) * Math.PI * 2;
+
+                const randX = Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * 0.38 * r;
+                const randY = Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * 0.22 * r;
+                const randZ = Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * 0.38 * r;
+
+                positions[i3] = Math.cos(branchAngle + spinAngle) * r + randX;
+                positions[i3 + 1] = randY;
+                positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * r + randZ;
+
+                const c = colorCore.clone();
+                if (r < radius * 0.45) {
+                    c.lerp(colorMid, r / (radius * 0.45));
+                } else {
+                    c.copy(colorMid).lerp(colorEdge, (r - radius * 0.45) / (radius * 0.55));
+                }
+                colors[i3] = c.r;
+                colors[i3 + 1] = c.g;
+                colors[i3 + 2] = c.b;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 0.046,
+                sizeAttenuation: true,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending,
+                vertexColors: true
+            });
+
+            galaxyPoints = new THREE.Points(geometry, material);
+            scene.add(galaxyPoints);
+
+            // 2. Hành tinh có vành đai nổi bật ở góc vũ trụ
+            const planetGeo = new THREE.SphereGeometry(0.65, 32, 32);
+            const planetMat = new THREE.MeshBasicMaterial({ color: 0xf97316, wireframe: true, transparent: true, opacity: 0.35 });
+            planetMesh = new THREE.Mesh(planetGeo, planetMat);
+            planetMesh.position.set(-5.2, 2.3, -2.5);
+            scene.add(planetMesh);
+
+            const ringGeo = new THREE.RingGeometry(0.95, 1.35, 48);
+            const ringMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.3 });
+            ringMesh = new THREE.Mesh(ringGeo, ringMat);
+            ringMesh.rotation.x = Math.PI / 2.4;
+            planetMesh.add(ringMesh);
+
+            // 3. Bầu trời sao nền vũ trụ
+            const starGeo = new THREE.BufferGeometry();
+            const starCount = 2800;
+            const starPos = new Float32Array(starCount * 3);
+            for (let i = 0; i < starCount * 3; i++) {
+                starPos[i] = (Math.random() - 0.5) * 50;
+            }
+            starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+            const starMat = new THREE.PointsMaterial({ size: 0.05, color: 0xffffff, transparent: true, opacity: 0.8 });
+            nebulaPoints = new THREE.Points(starGeo, starMat);
+            scene.add(nebulaPoints);
+
+            // Tương tác chuột & cảm ứng xoay Galaxy
+            canvas.addEventListener('mousedown', (e) => { isDragging = true; prevMouse = { x: e.clientX, y: e.clientY }; });
+            window.addEventListener('mouseup', () => isDragging = false);
+            window.addEventListener('mousemove', (e) => {
+                if (!isDragging || !isGalaxyRunning) return;
+                targetRot.y += (e.clientX - prevMouse.x) * 0.005;
+                targetRot.x = Math.max(-0.4, Math.min(1.2, targetRot.x + (e.clientY - prevMouse.y) * 0.005));
+                prevMouse = { x: e.clientX, y: e.clientY };
+            });
+
+            canvas.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    isDragging = true;
+                    prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                }
+            }, { passive: true });
+            window.addEventListener('touchend', () => isDragging = false);
+            window.addEventListener('touchmove', (e) => {
+                if (!isDragging || !isGalaxyRunning || e.touches.length !== 1) return;
+                targetRot.y += (e.touches[0].clientX - prevMouse.x) * 0.006;
+                targetRot.x = Math.max(-0.4, Math.min(1.2, targetRot.x + (e.touches[0].clientY - prevMouse.y) * 0.006));
+                prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }, { passive: true });
+
+            window.addEventListener('resize', () => {
+                if (!camera || !renderer) return;
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        const clock = new THREE.Clock();
+        function animateGalaxy() {
+            requestAnimationFrame(animateGalaxy);
+            if (!isGalaxyRunning) return;
+            const t = clock.getElapsedTime();
+            if (galaxyPoints) {
+                galaxyPoints.rotation.y = t * 0.14 + targetRot.y;
+                galaxyPoints.rotation.x += (targetRot.x - galaxyPoints.rotation.x) * 0.05;
+            }
+            if (planetMesh) {
+                planetMesh.rotation.y = t * 0.3;
+            }
+            if (nebulaPoints) {
+                nebulaPoints.rotation.y = t * 0.015;
+            }
+            renderer.render(scene, camera);
+        }
+
+        function enterWorkspace() {
+            const landing = document.getElementById('galaxy-landing');
+            const app = document.getElementById('main-app');
+            landing.classList.add('hidden-landing');
+            app.classList.remove('hidden-app');
+            app.style.display = 'flex';
+            setTimeout(() => { isGalaxyRunning = false; }, 800);
+        }
+
+        function returnToGalaxy() {
+            const landing = document.getElementById('galaxy-landing');
+            const app = document.getElementById('main-app');
+            isGalaxyRunning = true;
+            landing.classList.remove('hidden-landing');
+            setTimeout(() => { app.classList.add('hidden-app'); }, 400);
+        }
+
+        /* -------------------------------------------------------------------
+           3. ĐIỀU HƯỚNG TAB & SIDEBAR MOBILE
+        ------------------------------------------------------------------- */
+        function toggleMobileSidebar() {
+            document.getElementById('app-sidebar').classList.toggle('-translate-x-full');
+            document.getElementById('sidebar-backdrop').classList.toggle('hidden');
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-section').forEach(s => s.classList.add('hidden'));
+            document.getElementById(`section-${tabId}`).classList.remove('hidden');
+
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                btn.className = 'nav-item w-full flex items-start gap-3 p-3 rounded-xl text-left transition-all text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/70';
+            });
+            document.getElementById(`tab-${tabId}`).className = 'nav-item w-full flex items-start gap-3 p-3 rounded-xl text-left transition-all bg-gradient-to-r from-orange-500 to-amber-600 text-white shadow-md';
+
+            if (window.innerWidth < 1024 && !document.getElementById('app-sidebar').classList.contains('-translate-x-full')) {
+                toggleMobileSidebar();
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function switchPart2Subtab(sub) {
+            const appSec = document.getElementById('part2-sub-app');
+            const wfSec = document.getElementById('part2-sub-wireframe');
+            const btnApp = document.getElementById('subtab-btn-app');
+            const btnWf = document.getElementById('subtab-btn-wireframe');
+
+            if (sub === 'app') {
+                appSec.classList.remove('hidden');
+                wfSec.classList.add('hidden');
+                btnApp.className = 'px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white dark:bg-cosmic-900 text-cyan-600 dark:text-cyan-300 shadow-sm transition-all flex items-center gap-2';
+                btnWf.className = 'px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all flex items-center gap-2';
+            } else {
+                appSec.classList.add('hidden');
+                wfSec.classList.remove('hidden');
+                btnWf.className = 'px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white dark:bg-cosmic-900 text-cyan-600 dark:text-cyan-300 shadow-sm transition-all flex items-center gap-2';
+                btnApp.className = 'px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all flex items-center gap-2';
+            }
+        }
+
+        /* -------------------------------------------------------------------
+           4. DỮ LIỆU & RENDER TỔNG QUAN (MỤC TIÊU A-D & CHECKLIST Y1-Y6)
+        ------------------------------------------------------------------- */
+        const objectivesData = [
+            {
+                code: 'A',
+                title: 'Hiểu tổng quan & Xu hướng tương lai của CNTT',
+                short: 'Nắm bắt làn sóng chuyển đổi số, AI tạo sinh, điện toán đám mây và dữ liệu lớn.',
+                detail: 'Sinh viên nắm được bức tranh toàn cảnh cuộc cách mạng công nghiệp 4.0, nhận diện các công nghệ lõi đang định hình tương lai như Trí tuệ nhân tạo (AI), IoT, Big Data và tác động đến mọi ngành nghề.'
+            },
+            {
+                code: 'B',
+                title: 'Sử dụng & Ứng dụng công cụ trong học tập',
+                short: 'Khai thác Google NotebookLM để xây dựng trợ lý học tập và thư viện số.',
+                detail: 'Biết cách thu thập đa dạng nguồn học liệu (PDF, Slide, Video, Website), tổng hợp tri thức, đặt câu hỏi truy vấn thông minh và trích xuất ghi chú phục vụ tự học hiệu quả.'
+            },
+            {
+                code: 'C',
+                title: 'Tự xây dựng ứng dụng nhỏ cho cá nhân',
+                short: 'Thiết kế Wireframe và phát triển ứng dụng Quản lý ghi chú với Google AI Studio.',
+                detail: 'Áp dụng tư duy thiết kế giao diện (UI/UX Wireframe trên DrawIO/Figma) kết hợp công cụ AI Studio để tạo ra ứng dụng quản lý ghi chú thực tế phục vụ công việc và học tập.'
+            },
+            {
+                code: 'D',
+                title: 'Định hướng chuyên ngành & Nghề nghiệp CNTT',
+                short: 'Khám phá lộ trình phát triển bản thân trong các chuyên ngành công nghệ.',
+                detail: 'Cung cấp thông tin thực tế về các vị trí nghề nghiệp trong ngành CNTT (Lập trình viên, Thiết kế Web, Phân tích dữ liệu, Kỹ sư AI...) giúp sinh viên định hướng đúng đắn.'
+            }
+        ];
+
+        const requirementsChecklist = [
+            { id: 'Y1', label: 'Y1: Thu thập đầy đủ 8 slide bài học vào Thư viện số cá nhân', done: true },
+            { id: 'Y2', label: 'Y2: Đủ 4 định dạng nguồn (File, Ảnh/Video, Link Web, Ghi chú)', done: true },
+            { id: 'Y3', label: 'Y3 (Mở rộng): Tạo thư viện số cho môn học khác (COM108)', done: true },
+            { id: 'Y4', label: 'Y4: Hoàn thiện bản vẽ phác thảo giao diện & luồng vận hành', done: true },
+            { id: 'Y5', label: 'Y5: Tối thiểu 10 ghi chú cá nhân áp dụng ít nhất 5 ngày', done: true },
+            { id: 'Y6', label: 'Y6 (Mở rộng): Ứng dụng AI hỗ trợ tóm tắt & quản lý ghi chú', done: true }
+        ];
+
+        function renderObjectives() {
+            const grid = document.getElementById('objectives-grid');
+            grid.innerHTML = objectivesData.map((obj, idx) => `
+                <div onclick="toggleObjectiveDetail(${idx})" class="cursor-pointer p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700/80 hover:border-orange-500/60 transition-all">
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-orange-500/15 text-orange-600 dark:text-orange-400 font-extrabold flex items-center justify-center shrink-0">
+                            ${obj.code}
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between gap-2">
+                                <h4 class="font-bold text-sm">${obj.title}</h4>
+                                <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">${obj.short}</p>
+                            <div id="obj-detail-${idx}" class="hidden mt-3 pt-2.5 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                                ${obj.detail}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function toggleObjectiveDetail(idx) {
+            document.getElementById(`obj-detail-${idx}`).classList.toggle('hidden');
+        }
+
+        function renderChecklist() {
+            const container = document.getElementById('checklist-y1-y6');
+            container.innerHTML = requirementsChecklist.map((item, idx) => `
+                <label class="flex items-center gap-3 p-3.5 rounded-xl border ${item.done ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40'} cursor-pointer transition-all">
+                    <input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleRequirement(${idx})" class="w-4 h-4 accent-emerald-600 rounded">
+                    <span class="text-xs sm:text-sm font-medium ${item.done ? 'text-slate-800 dark:text-slate-100' : 'text-slate-500'}">${item.label}</span>
+                </label>
+            `).join('');
+            updateProgressBars();
+        }
+
+        function toggleRequirement(idx) {
+            requirementsChecklist[idx].done = !requirementsChecklist[idx].done;
+            renderChecklist();
+        }
+
+        function updateProgressBars() {
+            const doneCount = requirementsChecklist.filter(i => i.done).length;
+            const total = requirementsChecklist.length;
+            const pct = Math.round((doneCount / total) * 100);
+            document.getElementById('top-progress-bar').style.width = `${pct}%`;
+            document.getElementById('top-progress-text').textContent = `${pct}%`;
+            document.getElementById('overview-badge-count').textContent = `${doneCount} / ${total} Yêu cầu`;
+        }
+
+        /* -------------------------------------------------------------------
+           5. LOGIC PHẦN 1: THƯ VIỆN SỐ CÁ NHÂN & TRỢ LÝ NOTEBOOKLM
+        ------------------------------------------------------------------- */
+        let currentLibSubject = 'CNTT4.0';
+        let currentLibFilter = 'all';
+
+        const digitalLibraryData = [
+            { subject: 'CNTT4.0', type: 'file', badge: 'Y1 & Y2a • PDF/Slide', title: 'Bộ 8 Slide Bài Giảng Môn CNTT 4.0 (Slide 01 → 08)', detail: 'CNTT4.0_Bai01_den_Bai08_FPTPolytechnic.pdf' },
+            { subject: 'CNTT4.0', type: 'file', badge: 'Y2a • Tài liệu Word', title: 'Đề cương & Phụ lục 2 Hướng dẫn Assignment CNTT 4.0', detail: 'CNTT4.0 - Assignment.pdf (5 trang)' },
+            { subject: 'CNTT4.0', type: 'media', badge: 'Y2b • Video/Hình ảnh', title: 'Infographic Lịch sử 4 Cuộc Cách Mạng Công Nghiệp & Video AI', detail: 'https://youtu.be/cntt4-ai-overview • SoDo_CMCN4.0.png' },
+            { subject: 'CNTT4.0', type: 'link', badge: 'Y2c • Link Website', title: 'Cổng công cụ Google NotebookLM & Google AI Studio', detail: 'https://notebooklm.google.com | https://aistudio.google.com' },
+            { subject: 'CNTT4.0', type: 'note', badge: 'Y2d • Ghi chú cá nhân', title: 'Ghi chú tổng hợp của Hoàng Văn Minh về Prompt Engineering', detail: 'Nguyên tắc R-C-T-F (Role - Context - Task - Format) giúp AI trả lời chính xác gấp 3 lần.' },
+            { subject: 'COM108', type: 'file', badge: 'Y3 Mở rộng • PDF', title: 'Giáo trình Nhập môn Lập trình C (COM108)', detail: 'COM108_LapTrinhC_CoBan.pdf' },
+            { subject: 'COM108', type: 'note', badge: 'Y3 Mở rộng • Ghi chú', title: 'Ghi chú cấu trúc vòng lặp for, while và mảng 1 chiều trong C', detail: 'Lưu ý điều kiện dừng i < n để tránh lỗi tràn bộ nhớ mảng.' }
+        ];
+
+        function switchLibrarySubject(subj) {
+            currentLibSubject = subj;
+            const btnCntt = document.getElementById('lib-subj-cntt');
+            const btnCom = document.getElementById('lib-subj-com');
+            if (subj === 'CNTT4.0') {
+                btnCntt.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white transition-all';
+                btnCom.className = 'px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-700 transition-all';
+            } else {
+                btnCom.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white transition-all';
+                btnCntt.className = 'px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-700 transition-all';
+            }
+            renderLibraryItems();
+        }
+
+        function filterLibraryType(type) {
+            currentLibFilter = type;
+            document.querySelectorAll('.lib-filter-btn').forEach(btn => {
+                if (btn.dataset.type === type) {
+                    btn.className = 'lib-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 border border-indigo-500/30';
+                } else {
+                    btn.className = 'lib-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300';
+                }
+            });
+            renderLibraryItems();
+        }
+
+        function renderLibraryItems() {
+            const grid = document.getElementById('library-items-grid');
+            const filtered = digitalLibraryData.filter(item =>
+                item.subject === currentLibSubject &&
+                (currentLibFilter === 'all' || item.type === currentLibFilter)
+            );
+
+            grid.innerHTML = filtered.map(item => `
+                <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 hover:border-indigo-500/50 transition-all">
+                    <span class="inline-block px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 mb-2">
+                        ${item.badge}
+                    </span>
+                    <h4 class="font-bold text-sm mb-1">${item.title}</h4>
+                    <p class="text-xs font-mono text-slate-500 dark:text-slate-400 break-all">${item.detail}</p>
+                </div>
+            `).join('');
+        }
+
+        function addLibraryItem(e) {
+            e.preventDefault();
+            const type = document.getElementById('lib-new-type').value;
+            const title = document.getElementById('lib-new-title').value.trim();
+            const detail = document.getElementById('lib-new-detail').value.trim();
+            const badgeMap = {
+                file: 'Y2a • Tập tin mới',
+                media: 'Y2b • Hình ảnh/Video',
+                link: 'Y2c • Link Website',
+                note: 'Y2d • Ghi chú mới'
+            };
+
+            digitalLibraryData.unshift({
+                subject: currentLibSubject,
+                type: type,
+                badge: badgeMap[type],
+                title: title,
+                detail: detail
+            });
+
+            document.getElementById('lib-new-title').value = '';
+            document.getElementById('lib-new-detail').value = '';
+            renderLibraryItems();
+            showToast('Đã thêm nguồn tài liệu vào Thư viện số cá nhân!');
+        }
+
+        // Trợ lý Hỏi đáp NotebookLM
+        function handleNotebookSubmit(e) {
+            e.preventDefault();
+            const input = document.getElementById('notebook-input');
+            const q = input.value.trim();
+            if (!q) return;
+            input.value = '';
+            askNotebookLM(q);
+        }
+
+        function askNotebookLM(question) {
+            const chatBox = document.getElementById('notebook-chat-box');
+            chatBox.innerHTML += `
+                <div class="flex items-start justify-end gap-2.5">
+                    <div class="p-3 rounded-2xl rounded-tr-none bg-indigo-600 text-white text-xs sm:text-sm max-w-[85%]">
+                        ${question}
+                    </div>
+                </div>
+            `;
+
+            let answer = "Dựa trên <strong>8 Slide bài học CNTT 4.0</strong> của Hoàng Văn Minh: Công nghệ 4.0 tập trung vào kết nối vạn vật (IoT), Trí tuệ nhân tạo tạo sinh (GenAI), Điện toán đám mây và Tự động hóa thông minh giúp tối ưu năng suất học tập và làm việc.";
+            const qLower = question.toLowerCase();
+            if (qLower.includes('notebooklm') || qLower.includes('studio')) {
+                answer = "<strong>[Trích dẫn Slide 04 & 05]:</strong> <em>Google NotebookLM</em> giúp đóng gói nguồn tài liệu riêng (8 slide, PDF, link) để hỏi đáp không bị ảo giác thông tin; trong khi <em>Google AI Studio</em> cho phép thử nghiệm Prompt và xây dựng ứng dụng cá nhân hóa như App Quản lý ghi chú.";
+            } else if (qLower.includes('nghề')) {
+                answer = "<strong>[Trích dẫn Slide 07 & 08]:</strong> Ngành CNTT mở ra nhiều chuyên ngành hấp dẫn tại FPT Polytechnic như: Phát triển Phần mềm, Thiết kế Web/UI-UX, Khoa học Dữ liệu & AI, An toàn thông tin và Quản trị hệ thống Cloud.";
+            }
+
+            setTimeout(() => {
+                chatBox.innerHTML += `
+                    <div class="flex items-start gap-2.5">
+                        <div class="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0 text-xs font-bold">AI</div>
+                        <div class="p-3 rounded-2xl rounded-tl-none bg-white dark:bg-slate-800 border border-slate-200/70 dark:border-slate-700 text-xs sm:text-sm leading-relaxed max-w-[88%]">
+                            ${answer}
+                        </div>
+                    </div>
+                `;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }, 350);
+        }
+
+        /* -------------------------------------------------------------------
+           6. LOGIC PHẦN 2: ỨNG DỤNG QUẢN LÝ GHI CHÚ CÁ NHÂN (10 GHI CHÚ / 6 NGÀY)
+        ------------------------------------------------------------------- */
+        const personalNotes = [
+            { id: 1, date: '2026-11-18', tag: 'Học tập CNTT', title: 'Ghi chú 01: Tổng quan Cách mạng Công nghiệp 4.0', content: 'Tìm hiểu sự chuyển dịch từ tự động hóa truyền thống sang hệ thống thực-ảo (Cyber-Physical Systems) và AI tạo sinh.' },
+            { id: 2, date: '2026-11-18', tag: 'NotebookLM', title: 'Ghi chú 02: Khởi tạo Notebook môn CNTT 4.0', content: 'Tạo không gian làm việc trên Google NotebookLM và tải lên đầy đủ 8 slide bài giảng của FPT Polytechnic.' },
+            { id: 3, date: '2026-11-19', tag: 'NotebookLM', title: 'Ghi chú 03: Bổ sung nguồn Video & Link tham chiếu', content: 'Thêm các bài báo khoa học về xu hướng AI 2026 và video hướng dẫn phân tích dữ liệu vào thư viện số (Y2b, Y2c).' },
+            { id: 4, date: '2026-11-20', tag: 'Học tập CNTT', title: 'Ghi chú 04: Kỹ thuật viết Prompt hiệu quả (R-C-T-F)', content: 'Áp dụng công thức Role - Context - Task - Format khi đặt câu hỏi cho AI để nhận được câu trả lời có cấu trúc rõ ràng.' },
+            { id: 5, date: '2026-11-20', tag: 'Kế hoạch', title: 'Ghi chú 05: Lập lộ trình thực hiện Assignment 60%', content: 'Phân chia thời gian: 2 ngày hoàn thiện Thư viện số Phần 1, 3 ngày thiết kế Wireframe và xây dựng App Ghi chú Phần 2.' },
+            { id: 6, date: '2026-11-21', tag: 'AI Studio', title: 'Ghi chú 06: Thiết kế Wireframe App Quản lý Ghi chú', content: 'Phác thảo 3 màn hình chính trên DrawIO: Giao diện danh sách thẻ ghi chú, Form thêm/sửa và Thanh trợ lý AI tóm tắt (Y4).' },
+            { id: 7, date: '2026-11-22', tag: 'AI Studio', title: 'Ghi chú 07: Thử nghiệm mô hình trên Google AI Studio', content: 'Kiểm thử System Instructions giúp AI đóng vai trò trợ lý sắp xếp ghi chú học tập theo mức độ ưu tiên.' },
+            { id: 8, date: '2026-11-23', tag: 'Học tập CNTT', title: 'Ghi chú 08: Mở rộng Thư viện số sang môn COM108', content: 'Tạo thêm sổ tay Nhập môn Lập trình C để lưu trữ các thuật toán sắp xếp và bài tập thực hành vòng lặp (Y3).' },
+            { id: 9, date: '2026-11-24', tag: 'Kế hoạch', title: 'Ghi chú 09: Rà soát tiêu chí bảo vệ Assignment', content: 'Kiểm tra đủ 10 ghi chú cá nhân qua 6 ngày sử dụng thực tế; chuẩn bị kịch bản demo trực tiếp trước giảng viên.' },
+            { id: 10, date: '2026-11-25', tag: 'AI Studio', title: 'Ghi chú 10: Đóng gói hồ sơ nộp bài chuẩn quy định', content: 'Xuất báo cáo PDF và nén toàn bộ sản phẩm theo đúng cú pháp: PK05001-HoangVanMinh_CNTT4.0_Assignment.zip.' }
+        ];
+
+        function renderPersonalNotes() {
+            const search = document.getElementById('note-search').value.toLowerCase();
+            const tagFilter = document.getElementById('note-filter-tag').value;
+            const list = document.getElementById('personal-notes-list');
+
+            const filtered = personalNotes.filter(n =>
+                (tagFilter === 'all' || n.tag === tagFilter) &&
+                (n.title.toLowerCase().includes(search) || n.content.toLowerCase().includes(search))
+            );
+
+            list.innerHTML = filtered.map(note => `
+                <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 flex flex-col justify-between gap-3 hover:border-cyan-500/50 transition-all">
+                    <div>
+                        <div class="flex items-center justify-between gap-2 mb-2">
+                            <span class="px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-cyan-500/15 text-cyan-700 dark:text-cyan-300">${note.tag}</span>
+                            <span class="text-[11px] font-mono text-slate-400">${note.date}</span>
+                        </div>
+                        <h5 class="font-bold text-sm mb-1.5">${note.title}</h5>
+                        <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">${note.content}</p>
+                    </div>
+                    <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-200/70 dark:border-slate-700/70">
+                        <button onclick="summarizeSingleNote(${note.id})" class="text-[11px] font-semibold text-indigo-500 hover:text-indigo-400 flex items-center gap-1">
+                            <i data-lucide="sparkles" class="w-3 h-3"></i> AI Tóm tắt
+                        </button>
+                        <button onclick="deletePersonalNote(${note.id})" class="text-[11px] font-semibold text-rose-500 hover:text-rose-400 flex items-center gap-1 ml-2">
+                            <i data-lucide="trash-2" class="w-3 h-3"></i> Xóa
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            updateY5Stats();
+            lucide.createIcons();
+        }
+
+        function updateY5Stats() {
+            const totalNotes = personalNotes.length;
+            const uniqueDays = new Set(personalNotes.map(n => n.date)).size;
+            const noteEl = document.getElementById('y5-note-count');
+            const dayEl = document.getElementById('y5-day-count');
+
+            noteEl.textContent = `${totalNotes} / 10 ${totalNotes >= 10 ? '✓' : '(Thiếu)'}`;
+            dayEl.textContent = `${uniqueDays} / 5 ngày ${uniqueDays >= 5 ? '✓' : '(Thiếu)'}`;
+        }
+
+        function addPersonalNote(e) {
+            e.preventDefault();
+            const title = document.getElementById('note-title').value.trim();
+            const date = document.getElementById('note-date').value;
+            const tag = document.getElementById('note-tag').value;
+            const content = document.getElementById('note-content').value.trim();
+
+            personalNotes.unshift({
+                id: Date.now(),
+                date: date,
+                tag: tag,
+                title: title,
+                content: content
+            });
+
+            document.getElementById('note-title').value = '';
+            document.getElementById('note-content').value = '';
+            renderPersonalNotes();
+            showToast('Đã lưu ghi chú cá nhân mới!');
+        }
+
+        function deletePersonalNote(id) {
+            const idx = personalNotes.findIndex(n => n.id === id);
+            if (idx !== -1) {
+                personalNotes.splice(idx, 1);
+                renderPersonalNotes();
+                showToast('Đã xóa ghi chú!', 'info');
+            }
+        }
+
+        function aiAutoSuggestTag() {
+            const text = (document.getElementById('note-title').value + ' ' + document.getElementById('note-content').value).toLowerCase();
+            const tagSelect = document.getElementById('note-tag');
+            if (text.includes('notebook') || text.includes('slide')) tagSelect.value = 'NotebookLM';
+            else if (text.includes('ai') || text.includes('wireframe') || text.includes('studio')) tagSelect.value = 'AI Studio';
+            else if (text.includes('kế hoạch') || text.includes('bảo vệ') || text.includes('nộp')) tagSelect.value = 'Kế hoạch';
+            else tagSelect.value = 'Học tập CNTT';
+            showToast(`AI đã gợi ý chủ đề: ${tagSelect.value}`, 'info');
+        }
+
+        function summarizeSingleNote(id) {
+            const note = personalNotes.find(n => n.id === id);
+            if (!note) return;
+            const out = document.getElementById('ai-note-output');
+            out.innerHTML = `<strong>✨ AI Tóm tắt [${note.title}]:</strong> Trọng tâm ngày <code>${note.date}</code> thuộc nhóm <b>${note.tag}</b> — <em>"${note.content}"</em> &rarr; Hành động đề xuất: Lưu trữ minh chứng vào báo cáo Assignment.`;
+            showToast('AI đã tóm tắt ghi chú!', 'info');
+        }
+
+        function runAINoteAction(mode) {
+            const out = document.getElementById('ai-note-output');
+            const total = personalNotes.length;
+            const days = new Set(personalNotes.map(n => n.date)).size;
+
+            if (mode === 'summary') {
+                out.innerHTML = `<strong>✨ Báo cáo Tổng hợp AI (Dữ liệu của Hoàng Văn Minh - PK05001):</strong> Bạn đã ghi chép <strong>${total} ghi chú</strong> xuyên suốt <strong>${days} ngày</strong>. Nội dung bao phủ 3 trụ cột chính: (1) Xây dựng Thư viện số trên NotebookLM từ 8 slide bài giảng, (2) Thực hành kỹ thuật Prompt R-C-T-F và (3) Thiết kế Wireframe + Vận hành App Ghi chú trên Google AI Studio.`;
+            } else {
+                out.innerHTML = `<strong>📅 Lộ trình Ôn tập Đề xuất bởi AI:</strong><br>
+                • <b>Bước 1:</b> Xuất bản báo cáo chi tiết các ghi chú từ ngày 18/11 đến 25/11 sang định dạng PDF.<br>
+                • <b>Bước 2:</b> Chạy thử trực tiếp chức năng tìm kiếm, lọc và AI tóm tắt trên App để chuẩn bị cho phần thực hành 40% điểm bảo vệ.<br>
+                • <b>Bước 3:</b> Nén toàn bộ thư mục thành <code>PK05001-HoangVanMinh_CNTT4.0_Assignment.zip</code>.`;
+            }
+        }
+
+        function selectWireframeNode(node) {
+            const box = document.getElementById('wireframe-detail-box');
+            if (node === 'main-ui') {
+                box.innerHTML = `<strong>Chi tiết Y4a (Giao diện chính):</strong> Thiết kế đáp ứng đa thiết bị (Responsive), thanh điều hướng trên cùng chứa ô tìm kiếm thời gian thực và bộ lọc chủ đề; vùng trung tâm hiển thị các thẻ ghi chú sắp xếp theo ngày giảm dần.`;
+            } else if (node === 'func-ui') {
+                box.innerHTML = `<strong>Chi tiết Y4b (Giao diện chức năng chính):</strong> Khu vực tạo ghi chú tích hợp chọn ngày (Date Picker), phân loại nhãn (Tag) và nút gọi trợ lý AI tự động phân tích ngữ nghĩa nội dung.`;
+            } else {
+                box.innerHTML = `<strong>Chi tiết Y4c (Cách vận hành):</strong> Dữ liệu nhập vào được kiểm tra hợp lệ, cập nhật tự động bộ đếm đạt chuẩn Y5 (>= 10 ghi chú, >= 5 ngày) và đồng bộ với mô-đun AI Studio.`;
+            }
+        }
+
+        /* -------------------------------------------------------------------
+           7. LOGIC PHẦN 4: SAO CHÉP TÊN FILE ZIP & CÂU HỎI VẤN ĐÁP BẢO VỆ
+        ------------------------------------------------------------------- */
+        function copyZipFilename() {
+            const text = document.getElementById('zip-filename-text').textContent.trim();
+            const tempInput = document.createElement('input');
+            tempInput.value = text;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            showToast(`Đã sao chép: ${text}`);
+        }
+
+        const defenseQuestions = [
+            {
+                q: "Câu 1: Em hãy trình bày cách tổ chức 'Thư viện số cá nhân' trên Google NotebookLM ở Phần 1 và lợi ích của nó?",
+                a: "Em đã thu thập đầy đủ 8 slide bài giảng CNTT 4.0 (Y1) cùng 4 định dạng tài liệu: file PDF/Word, hình ảnh/video minh họa, link website tham chiếu và ghi chú tự tổng hợp (Y2). NotebookLM giúp em truy vấn kiến thức chính xác theo nguồn đã nạp và trích xuất tóm tắt nhanh khi ôn tập."
+            },
+            {
+                q: "Câu 2: Ứng dụng 'Quản lý ghi chú cá nhân' của em đáp ứng yêu cầu Y5 và Y6 như thế nào?",
+                a: "Ứng dụng của em có đầy đủ bản vẽ Wireframe mô tả giao diện chính, chức năng và luồng vận hành (Y4). Về dữ liệu thực tế, em đã duy trì 10 ghi chú có ý nghĩa xuyên suốt hơn 5 ngày học tập (Y5) và tích hợp AI giúp tự động gợi ý chủ đề, tóm tắt nội dung và lập kế hoạch ôn tập (Y6)."
+            },
+            {
+                q: "Câu 3: Khi sử dụng công cụ AI trong học tập, cần lưu ý nguyên tắc gì để đảm bảo tính chính xác và trung thực?",
+                a: "Cần cung cấp ngữ cảnh và nguồn tài liệu tin cậy (như 8 slide môn học trên NotebookLM) để hạn chế AI suy diễn sai lệch; luôn kiểm chứng lại thông tin đầu ra và dùng AI như trợ lý gợi mở tư duy thay vì sao chép thụ động."
+            }
+        ];
+
+        function renderDefenseQA() {
+            const list = document.getElementById('defense-qa-list');
+            list.innerHTML = defenseQuestions.map((item, idx) => `
+                <div onclick="document.getElementById('def-ans-${idx}').classList.toggle('hidden')" class="cursor-pointer p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700 hover:border-violet-500/50 transition-all">
+                    <div class="flex items-center justify-between gap-2 font-bold text-xs sm:text-sm">
+                        <span>${item.q}</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    </div>
+                    <div id="def-ans-${idx}" class="hidden mt-3 pt-2.5 border-t border-slate-200 dark:border-slate-700 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                        <strong class="text-emerald-600 dark:text-emerald-400">Gợi ý trả lời:</strong> ${item.a}
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        /* -------------------------------------------------------------------
+           8. KHỞI TẠO TOÀN BỘ ỨNG DỤNG KHI TẢI TRANG
+        ------------------------------------------------------------------- */
+        window.onload = function () {
+            const savedTheme = localStorage.getItem('cntt4-theme');
+            if (savedTheme === 'light') {
+                document.documentElement.classList.remove('dark');
+            }
+
+            initGalaxyScene();
+            animateGalaxy();
+
+            renderObjectives();
+            renderChecklist();
+            renderLibraryItems();
+            renderPersonalNotes();
+            renderDefenseQA();
+        };
+    </script>
+</body>
+</html>
